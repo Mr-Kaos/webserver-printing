@@ -1,5 +1,13 @@
 # webserver-printing
-Local Web Server for can print in a local printer from Javascript to a preselected local printer without user interact. This tool is good when you need to print from your web app directly to a preselected printer.
+
+This is a fork of [drualcman's Local Web Server for Printing](https://github.com/drualcman/webserver-printing). This fork contains a few changes:
+
+- Printer names that are network paths no longer invalidate the JSON.
+- Added exception catching for various errors that may occur to someone using this program for the first time (such as needing to run as admin or having the port blocked by another process).
+
+# Summary
+
+This is a Local Web Server that can access any printer devices on the host computer and print to them via a HTTP request. This can open up the ability to make asynchronous print requests through JavaScript, cURL or any other tool capable of sending HTTP requests. This tool is good when you need to print from your web app directly to a printer available to the server.
 
 ## How to use
 ### From JAVASCRIPT or HTML FORM can send request to this server. Can use post, get or mix the 2 options on the request call like.
@@ -27,7 +35,7 @@ data.append("file", "[exact path with the file to print]");     //if not path, s
 data.append("count", "[number of copioes]");                    //optional. Default 1
 ```
 
-### get data
+### Get data
 * Get request with ```http://localhost:8888/printerlist```
 * Get request with ``` http://localhost:8888?printer=[printer name]&url[url file to print]```
 * Get request with ```http://localhost:8888?printer=[printer name]&url[url file to print]&count=3```
@@ -45,6 +53,6 @@ data.append("url", "[url with a document to print]");           //if url not sen
 
 You can combine post data and get data. Property only can send once or in get variables or in post variables.
 
-### Contributions from
+### Contributions From
 RAW PRINT are used on this project from https://github.com/frogmorecs/RawPrint but with a small changes. Thanks to the owner
 
