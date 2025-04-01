@@ -12,7 +12,7 @@ public class WindowsManagement
         List<string> printers = new List<string>();
         foreach (string item in PrinterSettings.InstalledPrinters)
         {
-            printers.Add(item);
+            printers.Add(item.Replace("\\", "\\\\"));
         }
         return printers;
     }
