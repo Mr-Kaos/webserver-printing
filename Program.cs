@@ -61,36 +61,35 @@ var data = new FormData();
 data.append(""printer"", ""[printer name]"");
 data.append(""url"", ""[url with a document to print]"");           //if url not send path
 
-You can combine post data and get data. Property only can send once or in get variables or in post variables.
-";
+You can combine post data and get data. Property only can send once or in get variables or in post variables.";
         Console.WriteLine(help);
 
         WebServer web;
-        if(args.Length > 0)
+        if (args.Length > 0)
         {
             string http = "http";
             string server = "*";
             List<int> ports = new List<int>();
             List<string> prefixes = new List<string>();
-            foreach(string item in args)
+            foreach (string item in args)
             {
                 Uri test;
-                if(Uri.TryCreate(item, UriKind.Absolute, out test))
+                if (Uri.TryCreate(item, UriKind.Absolute, out test))
                 {
-                    if(item.IndexOf(":", item.IndexOf("://") + 1) < 0)
+                    if (item.IndexOf(":", item.IndexOf("://") + 1) < 0)
                     {
                         prefixes.Add(item + ":8888/");
                     }
                     else
                     {
-                        if(item.IndexOf("http") < 0)
+                        if (item.IndexOf("http") < 0)
                         {
-                            if(item.Substring(item.Length - 1, 1) == "/") prefixes.Add("http://" + item);
+                            if (item.Substring(item.Length - 1, 1) == "/") prefixes.Add("http://" + item);
                             else prefixes.Add("http://" + item + "/");
                         }
                         else
                         {
-                            if(item.Substring(item.Length - 1, 1) == "/") prefixes.Add(item);
+                            if (item.Substring(item.Length - 1, 1) == "/") prefixes.Add(item);
                             else prefixes.Add(item + "/");
                         }
                     }
@@ -98,17 +97,17 @@ You can combine post data and get data. Property only can send once or in get va
                 else
                 {
                     int port;
-                    if(int.TryParse(item, out port)) ports.Add(port);
+                    if (int.TryParse(item, out port)) ports.Add(port);
                     else
                     {
-                        if(item.IndexOf("http") < 0) server = item;
+                        if (item.IndexOf("http") < 0) server = item;
                         else http = item.Replace("://", "") + "://";
                     }
                 }
             }
-            if(ports.Count() > 0)
+            if (ports.Count() > 0)
             {
-                foreach(int p in ports)
+                foreach (int p in ports)
                 {
                     prefixes.Add(http + server.Replace(":", "") + ":" + p.ToString() + "/");
                 }
@@ -119,6 +118,13 @@ You can combine post data and get data. Property only can send once or in get va
         else
             web = new WebServer();
 
-        Console.WriteLine("Press CTRL+C to exit...");
+        if (web.Start())
+        {
+            Console.WriteLine("Press CTRL+C to exit...");
+        } else
+        {
+            Console.WriteLine("Press [Enter] to exit.");
+            Console.Read();
+        }
     }
 }

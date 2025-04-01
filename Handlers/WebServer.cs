@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using WerServer.Helpers;
@@ -13,20 +15,21 @@ public class WebServer
 {
     static HttpListener listener;
     private Thread listenThread1;
+    private List<string> prefixes;
 
     public WebServer()
     {
-        List<string> prefixes = new List<string>() { "http://*:8888/" };
-        Start(prefixes);
+        this.prefixes = new List<string>() { "http://*:8888/" };
     }
 
     public WebServer(List<string> prefixes)
     {
-        Start(prefixes);
+        this.prefixes = prefixes;
     }
 
-    public void Start(List<string> prefixes)
+    public bool Start()
     {
+        bool success = true;
         if (!HttpListener.IsSupported)
         {
             throw new Exception("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
@@ -35,16 +38,37 @@ public class WebServer
         // Create a listener.
         listener = new HttpListener();
         // Add the prefixes.
-        foreach (string s in prefixes)
+        foreach (string s in this.prefixes)
         {
             listener.Prefixes.Add(s);
             Console.WriteLine($"server on {s}...");
         }
         listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
-        listener.Start();
-        listenThread1 = new Thread(new ParameterizedThreadStart(startlistener));
-        listenThread1.Start();
-        Console.WriteLine("Listening...");
+        try
+        {
+            listener.Start();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("ERROR: Cannot start web server! Reason: " + e.Message + " Ensure the server is running as Administrator and that the server is not already running.");
+            success = false;
+        }
+
+        if (success)
+        {
+            try
+            {
+                listenThread1 = new Thread(new ParameterizedThreadStart(startlistener));
+                listenThread1.Start();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ERROR: Failed to start listening. Reason:", e.Message + " Ensure the port for the server is not already in use.");
+            }
+            Console.WriteLine("Listening...");
+        }
+
+        return success;
     }
 
     private void startlistener(object s)
@@ -94,7 +118,7 @@ public class WebServer
         //append the data response
         byte[] buffer;
         Stream output = new MemoryStream();
-        Console.WriteLine("setup completed...");
+        Console.WriteLine("Setup completed...");
         try
         {
             switch (uri.LocalPath.ToLower())
@@ -102,25 +126,25 @@ public class WebServer
                 case "/printerlist":
                 case "printerlist":
                     //get the printer list to show
-                    Console.WriteLine("Get printer List...");
+                    Console.WriteLine("Getting printer List...");
                     buffer = Encoding.ASCII.GetBytes(ObjectsHelper.ToJson(WindowsManagement.PopulateInstalledPrinters()));
                     response.ContentLength64 = buffer.Length;
                     output = response.OutputStream;
                     output.Write(buffer, 0, buffer.Length);
                     break;
                 default:
-                    Console.WriteLine("Print document...");
+                    Console.WriteLine("Printing document...");
                     WindowsPrint winPrint = new WindowsPrint(dataValues);
                     bool print = await winPrint.PrintUrl();
                     if (print)
                     {
-                        Console.WriteLine("printed...");
+                        Console.WriteLine("Print successful");
                         buffer = Encoding.ASCII.GetBytes(ObjectsHelper.ToJson(print));
                     }
                     else
                     {
-                        Console.WriteLine("error on print a document...");
-                        buffer = Encoding.ASCII.GetBytes(ObjectsHelper.ToJson(print, "Error on print a document"));
+                        Console.WriteLine("Error printing document...");
+                        buffer = Encoding.ASCII.GetBytes(ObjectsHelper.ToJson(print, "Error printing document"));
                     }
                     winPrint.Dispose();
                     response.ContentLength64 = buffer.Length;
@@ -132,11 +156,16 @@ public class WebServer
         }
         catch (Exception ex)
         {
-            Console.WriteLine("we can't print, no printer defined...", ex);
+            Console.WriteLine($"Failed to print. Reason: {ex.Message}", ex);
             buffer = Encoding.ASCII.GetBytes(ObjectsHelper.ToJson(false, ex.Message));
             response.ContentLength64 = buffer.Length;
             output = response.OutputStream;
             output.Write(buffer, 0, buffer.Length);
+
+            if (ex.InnerException is AuthenticationException)
+            {
+                Console.WriteLine($"ERROR: {ex.InnerException.Message}");
+            }
         }
         finally
         {
